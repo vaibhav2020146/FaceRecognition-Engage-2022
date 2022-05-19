@@ -1,12 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="bc268fc0-b726-4535-b778-a5ace245fc5c" name="Changes" comment="Added Image">
+    <list default="true" id="bc268fc0-b726-4535-b778-a5ace245fc5c" name="Changes" comment="New Features">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Attendance.csv" beforeDir="false" afterPath="$PROJECT_DIR$/Attendance.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app.py" beforeDir="false" afterPath="$PROJECT_DIR$/app.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/login_page.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/login_page.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -29,7 +25,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "C:/Users/91991/Downloads/Face-Recognition-Attendance-System-master"
+    "last_opened_file_path": "C:/Users/91991/Desktop/Project"
   }
 }]]></component>
   <component name="RunManager">
@@ -67,6 +63,7 @@
       <workItem from="1652350222642" duration="9000" />
       <workItem from="1652350240565" duration="377000" />
       <workItem from="1652897568652" duration="48000" />
+      <workItem from="1652950556684" duration="116000" />
     </task>
     <task id="LOCAL-00001" summary="Added Image">
       <created>1652350567733</created>
@@ -82,7 +79,14 @@
       <option name="project" value="LOCAL" />
       <updated>1652350574508</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="New Features">
+      <created>1652950575978</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1652950575978</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -101,6 +105,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Added Image" />
-    <option name="LAST_COMMIT_MESSAGE" value="Added Image" />
+    <MESSAGE value="New Features" />
+    <option name="LAST_COMMIT_MESSAGE" value="New Features" />
   </component>
 </project>
