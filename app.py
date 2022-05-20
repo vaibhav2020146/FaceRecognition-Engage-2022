@@ -1,3 +1,4 @@
+from operator import truediv
 from flask import Flask,render_template,redirect,request
 import openpyxl
 from werkzeug.utils import secure_filename
@@ -11,12 +12,89 @@ from datetime import datetime,date
 import pandas as pd
 from openpyxl import load_workbook
 import csv
+import dlib
+import math
+BLINK_RATIO_THRESHOLD = 4.8
 
 app=Flask(__name__)
 database={'vaibhav':['1234','vaibhavrajpal26@gmail.com'],'vrinda':['5678','ab@yahoo.com'],'shivam':['abcd','xyz@gmail.com'],'elon':['tesla','spacex@gmail.com']}
 #will make database like key would be the username and value would be list of password and mail
 
+def midpoint(point1 ,point2):
+    return (point1.x + point2.x)/2,(point1.y + point2.y)/2
+
+def euclidean_distance(point1 , point2):
+    return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
+
+def get_blink_ratio(eye_points, facial_landmarks):
     
+    #loading all the required points
+    corner_left  = (facial_landmarks.part(eye_points[0]).x, 
+                    facial_landmarks.part(eye_points[0]).y)
+    corner_right = (facial_landmarks.part(eye_points[3]).x, 
+                    facial_landmarks.part(eye_points[3]).y)
+    
+    center_top    = midpoint(facial_landmarks.part(eye_points[1]), 
+                             facial_landmarks.part(eye_points[2]))
+    center_bottom = midpoint(facial_landmarks.part(eye_points[5]), 
+                             facial_landmarks.part(eye_points[4]))
+
+    #calculating distance
+    horizontal_length = euclidean_distance(corner_left,corner_right)
+    vertical_length = euclidean_distance(center_top,center_bottom)
+
+    ratio = horizontal_length / vertical_length
+
+    return ratio
+
+def check_if_human_is_real():
+    cap = cv2.VideoCapture(0)
+    cv2.namedWindow('BlinkDetector')
+    #-----Step 3: Face detection with dlib----
+    detector = dlib.get_frontal_face_detector()
+    #-----Step 4: Detecting Eyes using landmarks in dlib-----
+    predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+    #these landmarks are based on the image above 
+    left_eye_landmarks  = [36, 37, 38, 39, 40, 41]
+    right_eye_landmarks = [42, 43, 44, 45, 46, 47]
+    while True:
+        #capturing frame
+        retval, frame = cap.read()
+
+        #exit the application if frame not found
+        if not retval:
+            print("Can't receive frame (stream end?). Exiting ...")
+            return False 
+
+        #-----Step 2: converting image to grayscale-----
+        #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        #-----Step 3: Face detection with dlib-----
+        #detecting faces in the frame 
+        faces,_,_ = detector.run(image = frame, upsample_num_times = 0, adjust_threshold = 0.0)
+
+        #-----Step 4: Detecting Eyes using landmarks in dlib-----
+        for face in faces:
+            landmarks = predictor(frame, face)
+            #-----Step 5: Calculating blink ratio for one eye-----
+            left_eye_ratio  = get_blink_ratio(left_eye_landmarks, landmarks)
+            right_eye_ratio = get_blink_ratio(right_eye_landmarks, landmarks)
+            blink_ratio     = (left_eye_ratio + right_eye_ratio) / 2
+
+            if blink_ratio > BLINK_RATIO_THRESHOLD:
+                #Blink detected! Do Something!
+                cv2.putText(frame,"BLINKING",(10,50), cv2.FONT_HERSHEY_SIMPLEX,
+                2,(255,255,255),2,cv2.LINE_AA)
+                return True
+        cv2.imshow('BlinkDetector', frame)
+        key = cv2.waitKey(1)
+        if key == 27:
+            break
+    cap.release()
+    cv2.destroyAllWindows()
+    return False
+
+
 def findEncodings(images):
     #will do encoding of the images and store it in the encodeListKnown
     encodeList = []
@@ -182,6 +260,18 @@ def form_signup():
             sh1.cell(row=row+1,column=2,value=passw)
             sh1.cell(row=row+1,column=3,value=mail)
             wb.save('database.xlsx')
+            path = "static/uploads"
+            images = []
+            classNames = []
+            myList = os.listdir(path)
+            print(myList)
+            for cl in myList:
+                curImg = cv2.imread(f'{path}/{cl}')
+                images.append(curImg)
+                classNames.append(os.path.splitext(cl)[0])
+            print(classNames)
+            encodeListKnown = findEncodings(images)
+            print('Encoding Complete')
             return render_template('/signup_page.html',info='UserName Is Available. Now Upload Your Photo')
     return render_template('/signup_page.html')
 
@@ -247,113 +337,104 @@ def about():
 
 @app.route("/leaving_out", methods=['GET', 'POST'])
 def leaving_out():
-    path = "static/uploads"
-    images = []
-    classNames = []
-    myList = os.listdir(path)
-    print(myList)
-    for cl in myList:
-        curImg = cv2.imread(f'{path}/{cl}')
-        images.append(curImg)
-        classNames.append(os.path.splitext(cl)[0])
-    print(classNames)
-    encodeListKnown = findEncodings(images)
-    print('Encoding Complete')
-    cap = cv2.VideoCapture(0)
-    while True:
-        success, img = cap.read()
-        # img = captureScreen()
-        imgS = cv2.resize(img, (0, 0), None, 0.25, 0.25)
-        imgS = cv2.cvtColor(imgS, cv2.COLOR_BGR2RGB)
-        facesCurFrame = face_recognition.face_locations(imgS)
-        encodesCurFrame = face_recognition.face_encodings(imgS, facesCurFrame)
+    if check_if_human_is_real()==True:
+        cap = cv2.VideoCapture(0)
+        while True:
+            success, img = cap.read()
+            # img = captureScreen()
+            imgS = cv2.resize(img, (0, 0), None, 0.25, 0.25)
+            imgS = cv2.cvtColor(imgS, cv2.COLOR_BGR2RGB)
+            facesCurFrame = face_recognition.face_locations(imgS)
+            encodesCurFrame = face_recognition.face_encodings(imgS, facesCurFrame)
         
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-        to_close_the_web_cam=(False,"")
-        for encodeFace, faceLoc in zip(encodesCurFrame, facesCurFrame):
-            matches = face_recognition.compare_faces(encodeListKnown, encodeFace)
-            faceDis = face_recognition.face_distance(encodeListKnown, encodeFace)
-            # print(faceDis)
-            matchIndex = np.argmin(faceDis)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+            to_close_the_web_cam=(False,"")
+            for encodeFace, faceLoc in zip(encodesCurFrame, facesCurFrame):
+                matches = face_recognition.compare_faces(encodeListKnown, encodeFace)
+                faceDis = face_recognition.face_distance(encodeListKnown, encodeFace)
+                # print(faceDis)
+                matchIndex = np.argmin(faceDis)
             
-            if matches[matchIndex]:
-                name = classNames[matchIndex].upper()
-                print(name)
-                y1, x2, y2, x1 = faceLoc
-                y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
-                cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.rectangle(img, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
-                cv2.putText(img, name, (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
-                to_close_the_web_cam=markAttendance_for_leaving(name)
+                if matches[matchIndex]:
+                    name = classNames[matchIndex].upper()
+                    print(name)
+                    y1, x2, y2, x1 = faceLoc
+                    y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
+                    cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    cv2.rectangle(img, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
+                    cv2.putText(img, name, (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
+                    to_close_the_web_cam=markAttendance_for_leaving(name)
+                    if(to_close_the_web_cam[0]):
+                        break
+            cv2.imshow('Webcam', img)
+            cv2.waitKey(1)
             if(to_close_the_web_cam[0]):
                 break
-        cv2.imshow('Webcam', img)
-        cv2.waitKey(1)
-        if(to_close_the_web_cam[0]):
-            break
-    cap.release()
-    cv2.destroyAllWindows()
-    #return render_template("index.html")
-    print(to_close_the_web_cam[1])
-    return render_template("/mark_attendance.html",info=to_close_the_web_cam[1])
+        cap.release()
+        cv2.destroyAllWindows()
+        #return render_template("index.html")
+        print(to_close_the_web_cam[1])
+        return render_template("/mark_attendance.html",info=to_close_the_web_cam[1])
 
 
 @app.route("/login")
 def login():
-    path = "static/uploads"
-    images = []
-    classNames = []
-    myList = os.listdir(path)
-    print(myList)
-    for cl in myList:
-        curImg = cv2.imread(f'{path}/{cl}')
-        images.append(curImg)
-        classNames.append(os.path.splitext(cl)[0])
-    print(classNames)
-    encodeListKnown = findEncodings(images)
-    print('Encoding Complete')
     #open the camera and takes the attendence
     #if error occur because of it then put it as same as in FaceDetect.py code
-    cap = cv2.VideoCapture(0)
-    while True:
-        success, img = cap.read()
-        # img = captureScreen()
-        imgS = cv2.resize(img, (0, 0), None, 0.25, 0.25)
-        imgS = cv2.cvtColor(imgS, cv2.COLOR_BGR2RGB)
-        facesCurFrame = face_recognition.face_locations(imgS)
-        encodesCurFrame = face_recognition.face_encodings(imgS, facesCurFrame)
+    if check_if_human_is_real()==True:
+        cap = cv2.VideoCapture(0)
+        while True:
+            success, img = cap.read()
+            # img = captureScreen()
+            imgS = cv2.resize(img, (0, 0), None, 0.25, 0.25)
+            imgS = cv2.cvtColor(imgS, cv2.COLOR_BGR2RGB)
+            facesCurFrame = face_recognition.face_locations(imgS)
+            encodesCurFrame = face_recognition.face_encodings(imgS, facesCurFrame)
         
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-        to_close_the_web_cam=(False,"")
-        for encodeFace, faceLoc in zip(encodesCurFrame, facesCurFrame):
-            matches = face_recognition.compare_faces(encodeListKnown, encodeFace)
-            faceDis = face_recognition.face_distance(encodeListKnown, encodeFace)
-            # print(faceDis)
-            matchIndex = np.argmin(faceDis)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+            to_close_the_web_cam=(False,"")
+            for encodeFace, faceLoc in zip(encodesCurFrame, facesCurFrame):
+                matches = face_recognition.compare_faces(encodeListKnown, encodeFace)
+                faceDis = face_recognition.face_distance(encodeListKnown, encodeFace)
+                # print(faceDis)
+                matchIndex = np.argmin(faceDis)
             
-            if matches[matchIndex]:
-                name = classNames[matchIndex].upper()
-                print(name)
-                y1, x2, y2, x1 = faceLoc
-                y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
-                cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                cv2.rectangle(img, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
-                cv2.putText(img, name, (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
-                to_close_the_web_cam=markAttendance_for_entry(name)
+                if matches[matchIndex]:
+                    name = classNames[matchIndex].upper()
+                    print(name)
+                    y1, x2, y2, x1 = faceLoc
+                    y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
+                    cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    cv2.rectangle(img, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
+                    cv2.putText(img, name, (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
+                    to_close_the_web_cam=markAttendance_for_entry(name)
+                    if(to_close_the_web_cam[0]):
+                        break
+            cv2.imshow('Webcam', img)
+            cv2.waitKey(1)
             if(to_close_the_web_cam[0]):
                 break
-        cv2.imshow('Webcam', img)
-        cv2.waitKey(1)
-        if(to_close_the_web_cam[0]):
-            break
-    cap.release()
-    cv2.destroyAllWindows()
-    #return render_template("index.html")
-    print(to_close_the_web_cam[1])
-    return render_template("/mark_attendance.html",info=to_close_the_web_cam[1])
+        cap.release()
+        cv2.destroyAllWindows()
+        #return render_template("index.html")
+        print(to_close_the_web_cam[1])
+        return render_template("/mark_attendance.html",info=to_close_the_web_cam[1])
 
+
+path = "static/uploads"
+images = []
+classNames = []
+myList = os.listdir(path)
+print(myList)
+for cl in myList:
+    curImg = cv2.imread(f'{path}/{cl}')
+    images.append(curImg)
+    classNames.append(os.path.splitext(cl)[0])
+print(classNames)
+encodeListKnown = findEncodings(images)
+print('Encoding Complete')
 
 if __name__=="__main__":
     #database.clear()
