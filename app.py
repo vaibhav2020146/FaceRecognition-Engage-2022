@@ -15,6 +15,8 @@ import csv
 import dlib
 import math
 BLINK_RATIO_THRESHOLD = 4.8
+latitude = 0
+longitude = 0
 
 app=Flask(__name__)
 database={'vaibhav':['1234','vaibhavrajpal26@gmail.com'],'vrinda':['5678','ab@yahoo.com'],'shivam':['abcd','xyz@gmail.com'],'elon':['tesla','spacex@gmail.com']}
@@ -235,6 +237,26 @@ UPLOAD_FOLD = 'static/uploads'
 UPLOAD_FOLDER = os.path.join(APP_ROOT, UPLOAD_FOLD)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+@app.route('/location', methods=['GET', 'POST'])
+def location():
+    if request.method == 'POST':
+        global longitude,latitude
+        longitude=request.form['longitude']
+        latitude=request.form['latitude']
+        print(latitude,longitude)
+        return render_template('/admin_page.html')
+    return render_template('/admin_page.html')
+
+@app.route('/confirm_location', methods=['GET', 'POST'])
+def confirm_location():
+    if request.method == 'POST':
+        longitude_cor = request.form['longitude_cord']
+        latitude_cor = request.form['latitude_cord']
+        print(latitude_cor,longitude_cor,longitude,latitude)
+        if(((float(longitude)-5.0)<=float(longitude_cor)<=(float(longitude)+5.0)) and ((float(latitude)-5.0)<=float(latitude_cor)<=(float(latitude)+5.0))):
+            return render_template('/mark_attendance.html')
+    return render_template('/check_location_of_user.html',info="Location is not correct")
+
 
 @app.route('/form_signup',methods=['GET','POST'])
 def form_signup():
@@ -297,7 +319,7 @@ def form_login():
             print(sh1.cell(row=i,column=1).value,sh1.cell(row=i,column=2).value)
             if (name1 == sh1.cell(row=i,column=1).value) and (pwd == str(sh1.cell(row=i,column=2).value)):
                 wb.save('database.xlsx')
-                return render_template('/mark_attendance.html')
+                return render_template('/check_location_of_user.html')
             elif (name1 == sh1.cell(row=i,column=1).value and pwd != str(sh1.cell(row=i,column=2).value)):
                 wb.save('database.xlsx')
                 return render_template('/login_page.html',info='Invalid Password')
