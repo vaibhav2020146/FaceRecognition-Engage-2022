@@ -100,6 +100,8 @@ label{
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    /*position: relative;
+    bottom: -8em;*/
 }
 
 .signup-btn:hover{
@@ -124,6 +126,6 @@ label{
   }
   .buttons{
     position:absolute;
-    bottom:65px;
+    bottom:70px;
     left:975px;
   }

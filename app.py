@@ -242,6 +242,7 @@ def form_signup():
         uname=request.form['username']
         passw=request.form['password']
         mail=request.form['mail']
+        print(uname,passw,mail)
         wb=openpyxl.load_workbook('database.xlsx')
         sh1=wb['Sheet1']
         row=sh1.max_row
@@ -260,19 +261,7 @@ def form_signup():
             sh1.cell(row=row+1,column=2,value=passw)
             sh1.cell(row=row+1,column=3,value=mail)
             wb.save('database.xlsx')
-            '''path = "static/uploads"
-            images = []
-            classNames = []
-            myList = os.listdir(path)
-            print(myList)
-            for cl in myList:
-                curImg = cv2.imread(f'{path}/{cl}')
-                images.append(curImg)
-                classNames.append(os.path.splitext(cl)[0])
-            print(classNames)
-            encodeListKnown = findEncodings(images)'''
-            print('Encoding Complete')
-            return render_template('/signup_page.html',info='Upload Your Photo')
+            return render_template('/signup_page.html',info='Signup Successful')
     return render_template('/signup_page.html')
 
 
@@ -324,7 +313,18 @@ def upload_file():
       #f.save(secure_filename(f.filename))
       f.save(os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(f.filename)))
       #print(database)
-      return render_template('/login_page.html',info='Signup Successful')
+      myList = os.listdir(path)
+      print(myList)
+      for cl in myList:
+          curImg = cv2.imread(f'{path}/{cl}')
+          images.append(curImg)
+          classNames.append(os.path.splitext(cl)[0])
+      print(classNames)
+      #keep a close check here.
+      global encodeListKnown
+      encodeListKnown = findEncodings(images)
+      print('Encoding Complete')
+      return render_template('/login_page.html',info='Photo Uploaded')
 
 @app.route("/")
 def home():
@@ -338,17 +338,6 @@ def about():
 
 @app.route("/leaving_out", methods=['GET', 'POST'])
 def leaving_out():
-    path = "static/uploads"
-    images = []
-    classNames = []
-    myList = os.listdir(path)
-    print(myList)
-    for cl in myList:
-        curImg = cv2.imread(f'{path}/{cl}')
-        images.append(curImg)
-        classNames.append(os.path.splitext(cl)[0])
-    print(classNames)
-    encodeListKnown = findEncodings(images)
     human_is_real=False
     cap = cv2.VideoCapture(0)
     #cv2.namedWindow('BlinkDetector')
@@ -426,17 +415,6 @@ def leaving_out():
 def login():
     #open the camera and takes the attendence
     #if error occur because of it then put it as same as in FaceDetect.py code
-    path = "static/uploads"
-    images = []
-    classNames = []
-    myList = os.listdir(path)
-    print(myList)
-    for cl in myList:
-        curImg = cv2.imread(f'{path}/{cl}')
-        images.append(curImg)
-        classNames.append(os.path.splitext(cl)[0])
-    print(classNames)
-    encodeListKnown = findEncodings(images)
     human_is_real=False
     cap = cv2.VideoCapture(0)
     #cv2.namedWindow('BlinkDetector')
@@ -511,7 +489,7 @@ def login():
         return render_template("/mark_attendance.html",info=to_close_the_web_cam[1])
 
 
-'''path = "static/uploads"
+path = "static/uploads"
 images = []
 classNames = []
 myList = os.listdir(path)
@@ -521,8 +499,8 @@ for cl in myList:
     images.append(curImg)
     classNames.append(os.path.splitext(cl)[0])
 print(classNames)
-encodeListKnown = findEncodings(images)
-print('Encoding Complete')'''
+#encodeListKnown = findEncodings(images)
+print('Encoding Complete')
 
 if __name__=="__main__":
     #database.clear()
