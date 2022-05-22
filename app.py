@@ -253,14 +253,14 @@ def form_signup():
                 #return render_template('/login_page.html',info='Invalid Username')
         if(check_if_username_exists==True):
             wb.save('database.xlsx')
-            return render_template('/login_page.html',info='Username Already Exists')
+            return render_template('/signup_page.html',info='Username Already Exists')
         else:
             #database[uname]=[passw,mail]
             sh1.cell(row=row+1,column=1,value=uname)
             sh1.cell(row=row+1,column=2,value=passw)
             sh1.cell(row=row+1,column=3,value=mail)
             wb.save('database.xlsx')
-            path = "static/uploads"
+            '''path = "static/uploads"
             images = []
             classNames = []
             myList = os.listdir(path)
@@ -270,9 +270,9 @@ def form_signup():
                 images.append(curImg)
                 classNames.append(os.path.splitext(cl)[0])
             print(classNames)
-            encodeListKnown = findEncodings(images)
+            encodeListKnown = findEncodings(images)'''
             print('Encoding Complete')
-            return render_template('/signup_page.html',info='UserName Is Available. Now Upload Your Photo')
+            return render_template('/signup_page.html',info='Upload Your Photo')
     return render_template('/signup_page.html')
 
 
@@ -329,6 +329,7 @@ def upload_file():
 @app.route("/")
 def home():
     #open the home page of the website
+    #change it to index.html test.html is for testing only
     return render_template("index.html")
 
 @app.route("/about", methods=['GET', 'POST'])
@@ -337,7 +338,50 @@ def about():
 
 @app.route("/leaving_out", methods=['GET', 'POST'])
 def leaving_out():
-    if check_if_human_is_real()==True:
+    path = "static/uploads"
+    images = []
+    classNames = []
+    myList = os.listdir(path)
+    print(myList)
+    for cl in myList:
+        curImg = cv2.imread(f'{path}/{cl}')
+        images.append(curImg)
+        classNames.append(os.path.splitext(cl)[0])
+    print(classNames)
+    encodeListKnown = findEncodings(images)
+    human_is_real=False
+    cap = cv2.VideoCapture(0)
+    #cv2.namedWindow('BlinkDetector')
+    detector = dlib.get_frontal_face_detector()
+    predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+    left_eye_landmarks  = [36, 37, 38, 39, 40, 41]
+    right_eye_landmarks = [42, 43, 44, 45, 46, 47]
+    while True:
+        retval, frame = cap.read()
+
+        if not retval:
+            print("Can't receive frame (stream end?). Exiting ...") 
+            human_is_real=False
+
+        faces,_,_ = detector.run(image = frame, upsample_num_times = 0, adjust_threshold = 0.0)
+
+        for face in faces:
+            landmarks = predictor(frame, face)
+            left_eye_ratio  = get_blink_ratio(left_eye_landmarks, landmarks)
+            right_eye_ratio = get_blink_ratio(right_eye_landmarks, landmarks)
+            blink_ratio     = (left_eye_ratio + right_eye_ratio) / 2
+
+            if blink_ratio > BLINK_RATIO_THRESHOLD:
+                cv2.putText(frame,"BLINKING",(10,50), cv2.FONT_HERSHEY_SIMPLEX,
+                2,(255,255,255),2,cv2.LINE_AA)
+                human_is_real=True
+        cv2.imshow('Webcam', frame)
+        key = cv2.waitKey(1)
+        if key == 27 or human_is_real==True:
+            break
+    #cap.release()
+    #cv2.destroyAllWindows()
+    if human_is_real==True:
         cap = cv2.VideoCapture(0)
         while True:
             success, img = cap.read()
@@ -382,7 +426,51 @@ def leaving_out():
 def login():
     #open the camera and takes the attendence
     #if error occur because of it then put it as same as in FaceDetect.py code
-    if check_if_human_is_real()==True:
+    path = "static/uploads"
+    images = []
+    classNames = []
+    myList = os.listdir(path)
+    print(myList)
+    for cl in myList:
+        curImg = cv2.imread(f'{path}/{cl}')
+        images.append(curImg)
+        classNames.append(os.path.splitext(cl)[0])
+    print(classNames)
+    encodeListKnown = findEncodings(images)
+    human_is_real=False
+    cap = cv2.VideoCapture(0)
+    #cv2.namedWindow('BlinkDetector')
+    detector = dlib.get_frontal_face_detector()
+    predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
+    left_eye_landmarks  = [36, 37, 38, 39, 40, 41]
+    right_eye_landmarks = [42, 43, 44, 45, 46, 47]
+    while True:
+        retval, frame = cap.read()
+
+        if not retval:
+            print("Can't receive frame (stream end?). Exiting ...") 
+            human_is_real=False
+
+        faces,_,_ = detector.run(image = frame, upsample_num_times = 0, adjust_threshold = 0.0)
+
+        for face in faces:
+            landmarks = predictor(frame, face)
+            left_eye_ratio  = get_blink_ratio(left_eye_landmarks, landmarks)
+            right_eye_ratio = get_blink_ratio(right_eye_landmarks, landmarks)
+            blink_ratio     = (left_eye_ratio + right_eye_ratio) / 2
+
+            if blink_ratio > BLINK_RATIO_THRESHOLD:
+                cv2.putText(frame,"BLINKING",(10,50), cv2.FONT_HERSHEY_SIMPLEX,
+                2,(255,255,255),2,cv2.LINE_AA)
+                human_is_real=True
+        cv2.imshow('Webcam', frame)
+        key = cv2.waitKey(1)
+        if key == 27 or human_is_real==True:
+            break
+    #cap.release()
+    #cv2.destroyAllWindows()
+
+    if human_is_real==True:
         cap = cv2.VideoCapture(0)
         while True:
             success, img = cap.read()
@@ -423,7 +511,7 @@ def login():
         return render_template("/mark_attendance.html",info=to_close_the_web_cam[1])
 
 
-path = "static/uploads"
+'''path = "static/uploads"
 images = []
 classNames = []
 myList = os.listdir(path)
@@ -434,7 +522,7 @@ for cl in myList:
     classNames.append(os.path.splitext(cl)[0])
 print(classNames)
 encodeListKnown = findEncodings(images)
-print('Encoding Complete')
+print('Encoding Complete')'''
 
 if __name__=="__main__":
     #database.clear()
