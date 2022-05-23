@@ -14,6 +14,7 @@ from openpyxl import load_workbook
 import csv
 import dlib
 import math
+import geocoder
 BLINK_RATIO_THRESHOLD = 4.8
 latitude = 0
 longitude = 0
@@ -244,18 +245,26 @@ def location():
         longitude=request.form['longitude']
         latitude=request.form['latitude']
         print(latitude,longitude)
-        return render_template('/admin_page.html')
+        return render_template('/admin_page.html',info="Location Updated")
     return render_template('/admin_page.html')
 
 @app.route('/confirm_location', methods=['GET', 'POST'])
 def confirm_location():
+    g = geocoder.ip('me')
+    print(g.latlng)
     if request.method == 'POST':
         longitude_cor = request.form['longitude_cord']
         latitude_cor = request.form['latitude_cord']
         print(latitude_cor,longitude_cor,longitude,latitude)
-        if(((float(longitude)-5.0)<=float(longitude_cor)<=(float(longitude)+5.0)) and ((float(latitude)-5.0)<=float(latitude_cor)<=(float(latitude)+5.0))):
-            return render_template('/mark_attendance.html')
-    return render_template('/check_location_of_user.html',info="Location is not correct")
+        if(float(latitude_cor)-5.0<=float(g.latlng[0])<=float(latitude_cor)+5.0 and float(longitude_cor)-5.0<=float(g.latlng[1])<=float(longitude_cor)+5.0):
+            print("True")
+            if(((float(longitude)-5.0)<=float(longitude_cor)<=(float(longitude)+5.0)) and ((float(latitude)-5.0)<=float(latitude_cor)<=(float(latitude)+5.0))):
+                return render_template('/mark_attendance.html')
+            else:
+                return render_template('/check_location_of_user.html',info="Location is not correct")
+        else:
+            return render_template('/check_location_of_user.html',info="You Are Not Present At The Current Location")   
+    return render_template('/check_location_of_user.html')
 
 
 @app.route('/form_signup',methods=['GET','POST'])
@@ -293,6 +302,11 @@ def form_login():
     if request.method=='POST':
         name1=request.form['username']
         pwd=request.form['password']
+        #to confirm if admin is accessing the system
+        if(name1=='admin' and pwd=='ms-engage'):
+            return render_template('/admin_page.html')
+        elif (name1=='admin' and pwd!='ms-engage'):
+            return render_template('/login_page.html',info='Invalid Password')
         #name1='vaibhav'
         # #pwd='12345'
         print(name1,pwd)
@@ -360,9 +374,8 @@ def about():
 
 @app.route("/leaving_out", methods=['GET', 'POST'])
 def leaving_out():
-    human_is_real=False
-    cap = cv2.VideoCapture(0)
-    #cv2.namedWindow('BlinkDetector')
+    human_is_real=True
+    '''cap = cv2.VideoCapture(0)
     detector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
     left_eye_landmarks  = [36, 37, 38, 39, 40, 41]
@@ -389,9 +402,7 @@ def leaving_out():
         cv2.imshow('Webcam', frame)
         key = cv2.waitKey(1)
         if key == 27 or human_is_real==True:
-            break
-    #cap.release()
-    #cv2.destroyAllWindows()
+            break'''
     if human_is_real==True:
         cap = cv2.VideoCapture(0)
         while True:
@@ -437,9 +448,8 @@ def leaving_out():
 def login():
     #open the camera and takes the attendence
     #if error occur because of it then put it as same as in FaceDetect.py code
-    human_is_real=False
-    cap = cv2.VideoCapture(0)
-    #cv2.namedWindow('BlinkDetector')
+    human_is_real=True
+    '''cap = cv2.VideoCapture(0)
     detector = dlib.get_frontal_face_detector()
     predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
     left_eye_landmarks  = [36, 37, 38, 39, 40, 41]
@@ -466,10 +476,7 @@ def login():
         cv2.imshow('Webcam', frame)
         key = cv2.waitKey(1)
         if key == 27 or human_is_real==True:
-            break
-    #cap.release()
-    #cv2.destroyAllWindows()
-
+            break'''
     if human_is_real==True:
         cap = cv2.VideoCapture(0)
         while True:
@@ -521,7 +528,7 @@ for cl in myList:
     images.append(curImg)
     classNames.append(os.path.splitext(cl)[0])
 print(classNames)
-#encodeListKnown = findEncodings(images)
+encodeListKnown = findEncodings(images)
 print('Encoding Complete')
 
 if __name__=="__main__":
