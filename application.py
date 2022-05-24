@@ -1,3 +1,4 @@
+from email.mime import application
 from operator import truediv
 from flask import Flask,render_template,redirect,request
 import openpyxl
@@ -17,7 +18,7 @@ import geocoder
 latitude = 0
 longitude = 0
 
-app=Flask(__name__)
+application=Flask(__name__)
 def findEncodings(images):
     #will do encoding of the images and store it in the encodeListKnown
     encodeList = []
@@ -104,7 +105,7 @@ def markAttendance_for_leaving(name):
     return (False,"")
 
 
-@app.route('/clear')
+@application.route('/clear')
 def clear():
     wb=openpyxl.load_workbook('Attendance.xlsx')
     sh1=wb['Sheet1']
@@ -119,7 +120,7 @@ def clear():
     wb.save('Attendance.xlsx')
     return render_template('/attendance_record.html')
 
-@app.route('/table')
+@application.route('/table')
 def table():
     df = pd.read_excel('Attendance.xlsx')
     df.to_excel('Attendance.xlsx', index=None)
@@ -131,9 +132,9 @@ def table():
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_FOLD = 'static/uploads'
 UPLOAD_FOLDER = os.path.join(APP_ROOT, UPLOAD_FOLD)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+application.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-@app.route('/location', methods=['GET', 'POST'])
+@application.route('/location', methods=['GET', 'POST'])
 def location():
     if request.method == 'POST':
         global longitude,latitude
@@ -142,7 +143,7 @@ def location():
         return render_template('/admin_page.html',info="Location Updated")
     return render_template('/admin_page.html')
 
-@app.route('/confirm_location', methods=['GET', 'POST'])
+@application.route('/confirm_location', methods=['GET', 'POST'])
 def confirm_location():
     g = geocoder.ip('me')
     if request.method == 'POST':
@@ -158,7 +159,7 @@ def confirm_location():
     return render_template('/check_location_of_user.html')
 
 
-@app.route('/form_signup',methods=['GET','POST'])
+@application.route('/form_signup',methods=['GET','POST'])
 def form_signup():
     if request.method=='POST':
         uname=request.form['username']
@@ -186,7 +187,7 @@ def form_signup():
     return render_template('/signup_page.html')
 
 
-@app.route('/form_login',methods=['GET','POST'])
+@application.route('/form_login',methods=['GET','POST'])
 def form_login():
     #for logging in the the system
     if request.method=='POST':
@@ -220,13 +221,13 @@ def form_login():
     return render_template('/login_page.html')
 
 
-@app.route('/uploader', methods = ['GET', 'POST'])
+@application.route('/uploader', methods = ['GET', 'POST'])
 def upload_file():
     #used to upload the image and save it in the same folder in which our project is
    if request.method == 'POST':
       f = request.files['file']
       #f.save(secure_filename(f.filename))
-      f.save(os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(f.filename)))
+      f.save(os.path.join(application.config['UPLOAD_FOLDER'], secure_filename(f.filename)))
       myList = os.listdir(path)
       for cl in myList:
           curImg = cv2.imread(f'{path}/{cl}')
@@ -237,17 +238,17 @@ def upload_file():
       encodeListKnown = findEncodings(images)
       return render_template('/login_page.html',info='Photo Uploaded')
 
-@app.route("/")
+@application.route("/")
 def home():
     #open the home page of the website
     #change it to index.html test.html is for testing only
     return render_template("index.html")
 
-@app.route("/about", methods=['GET', 'POST'])
+@application.route("/about", methods=['GET', 'POST'])
 def about():
     return render_template("/about.html") 
 
-@app.route("/leaving_out", methods=['GET', 'POST'])
+@application.route("/leaving_out", methods=['GET', 'POST'])
 def leaving_out():
     human_is_real=True
     if human_is_real==True:
@@ -287,7 +288,7 @@ def leaving_out():
         return render_template("/mark_attendance.html",info=to_close_the_web_cam[1])
 
 
-@app.route("/login")
+@application.route("/login")
 def login():
     #open the camera and takes the attendence
     #if error occur because of it then put it as same as in FaceDetect.py code
@@ -340,4 +341,4 @@ for cl in myList:
 encodeListKnown = findEncodings(images)
 
 if __name__=="__main__":
-    app.run(debug=False)
+    application.run(debug=False)
