@@ -26,7 +26,6 @@ decorator==5.1.1
 demjson==2.2.4
 distlib==0.3.4
 Django==4.0.4
-dlib==19.23.1
 et-xmlfile==1.1.0
 execnet==1.9.0
 @@ -7,6 +34,9 @@ face-recognition-models==0.3.0
