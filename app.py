@@ -56,7 +56,7 @@ def markAttendance_for_entry(name):
                 sh1.cell(row=row+1,column=3,value='NA')
                 sh1.cell(row=row+1,column=4,value=convert_to_format)
             wb.save('Attendance.xlsx')
-            return (True,"Attendance marked for "+name)
+            return (True,"Arival Attendance marked for "+name)
     return (False,"")
 
 def markAttendance_for_leaving(name):
@@ -68,7 +68,7 @@ def markAttendance_for_leaving(name):
         if (sh1.cell(row=i,column=1).value==name):
             check_if_username_has_entered=True
             break
-    wb.save('Attendance.xlsx')
+    #wb.save('Attendance.xlsx')
     if(check_if_username_has_entered==False):
         return (True,"You have not entered the attendance")
     with open('Attendance.csv', 'r+') as f:
@@ -87,7 +87,7 @@ def markAttendance_for_leaving(name):
             row=sh1.max_row
             is_added_leave=False
             for i in range(1,row+1):
-                if (sh1.cell(row=i,column=1).value==name) and (sh1.cell(row=i,column=4).value==convert_to_format) and (sh1.cell(row=i,column=3).value=='NA'):
+                if (sh1.cell(row=i,column=1).value==name) and (sh1.cell(row=i,column=4).value==convert_to_format and sh1.cell(row=i,column=3).value=='NA'):
                     is_added_leave=True
 
             if(is_added_leave==False):
@@ -100,9 +100,24 @@ def markAttendance_for_leaving(name):
                     position="C"+str(row_num)
                     sh1[position].value=dtString
             wb.save('Attendance.xlsx')
-            return (True,"Attendance marked for "+name)
+            return (True,"Departure Attendance marked for "+name)
     return (False,"")
 
+
+@app.route('/clear')
+def clear():
+    wb=openpyxl.load_workbook('Attendance.xlsx')
+    sh1=wb['Sheet1']
+    row=sh1.max_row
+    for i in range(2,row+1):
+        for cell in sh1[i]:
+            cell.value=''
+    sh1.cell(row=1,column=1,value='Name')
+    sh1.cell(row=1,column=2,value='Entry Time')
+    sh1.cell(row=1,column=3,value='Leave Time')
+    sh1.cell(row=1,column=4,value='Date')
+    wb.save('Attendance.xlsx')
+    return render_template('/attendance_record.html')
 
 @app.route('/table')
 def table():
