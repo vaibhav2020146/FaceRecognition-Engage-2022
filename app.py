@@ -13,91 +13,11 @@ import pandas as pd
 from openpyxl import load_workbook
 import csv
 import dlib
-import math
 import geocoder
-BLINK_RATIO_THRESHOLD = 4.8
 latitude = 0
 longitude = 0
 
 app=Flask(__name__)
-database={'vaibhav':['1234','vaibhavrajpal26@gmail.com'],'vrinda':['5678','ab@yahoo.com'],'shivam':['abcd','xyz@gmail.com'],'elon':['tesla','spacex@gmail.com']}
-#will make database like key would be the username and value would be list of password and mail
-
-def midpoint(point1 ,point2):
-    return (point1.x + point2.x)/2,(point1.y + point2.y)/2
-
-def euclidean_distance(point1 , point2):
-    return math.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
-
-def get_blink_ratio(eye_points, facial_landmarks):
-    
-    #loading all the required points
-    corner_left  = (facial_landmarks.part(eye_points[0]).x, 
-                    facial_landmarks.part(eye_points[0]).y)
-    corner_right = (facial_landmarks.part(eye_points[3]).x, 
-                    facial_landmarks.part(eye_points[3]).y)
-    
-    center_top    = midpoint(facial_landmarks.part(eye_points[1]), 
-                             facial_landmarks.part(eye_points[2]))
-    center_bottom = midpoint(facial_landmarks.part(eye_points[5]), 
-                             facial_landmarks.part(eye_points[4]))
-
-    #calculating distance
-    horizontal_length = euclidean_distance(corner_left,corner_right)
-    vertical_length = euclidean_distance(center_top,center_bottom)
-
-    ratio = horizontal_length / vertical_length
-
-    return ratio
-
-def check_if_human_is_real():
-    cap = cv2.VideoCapture(0)
-    cv2.namedWindow('BlinkDetector')
-    #-----Step 3: Face detection with dlib----
-    detector = dlib.get_frontal_face_detector()
-    #-----Step 4: Detecting Eyes using landmarks in dlib-----
-    predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
-    #these landmarks are based on the image above 
-    left_eye_landmarks  = [36, 37, 38, 39, 40, 41]
-    right_eye_landmarks = [42, 43, 44, 45, 46, 47]
-    while True:
-        #capturing frame
-        retval, frame = cap.read()
-
-        #exit the application if frame not found
-        if not retval:
-            print("Can't receive frame (stream end?). Exiting ...")
-            return False 
-
-        #-----Step 2: converting image to grayscale-----
-        #frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-        #-----Step 3: Face detection with dlib-----
-        #detecting faces in the frame 
-        faces,_,_ = detector.run(image = frame, upsample_num_times = 0, adjust_threshold = 0.0)
-
-        #-----Step 4: Detecting Eyes using landmarks in dlib-----
-        for face in faces:
-            landmarks = predictor(frame, face)
-            #-----Step 5: Calculating blink ratio for one eye-----
-            left_eye_ratio  = get_blink_ratio(left_eye_landmarks, landmarks)
-            right_eye_ratio = get_blink_ratio(right_eye_landmarks, landmarks)
-            blink_ratio     = (left_eye_ratio + right_eye_ratio) / 2
-
-            if blink_ratio > BLINK_RATIO_THRESHOLD:
-                #Blink detected! Do Something!
-                cv2.putText(frame,"BLINKING",(10,50), cv2.FONT_HERSHEY_SIMPLEX,
-                2,(255,255,255),2,cv2.LINE_AA)
-                return True
-        cv2.imshow('BlinkDetector', frame)
-        key = cv2.waitKey(1)
-        if key == 27:
-            break
-    cap.release()
-    cv2.destroyAllWindows()
-    return False
-
-
 def findEncodings(images):
     #will do encoding of the images and store it in the encodeListKnown
     encodeList = []
@@ -110,11 +30,9 @@ def findEncodings(images):
 def markAttendance_for_entry(name):
     #will mark the attendance of the student and save it in the csv file
     #df = pd.read_excel("Attendance.xlsx", usecols = ['Username'])
-    #print(df)
     with open('Attendance.csv', 'r+') as f:
         myDataList = f.readlines()
         nameList = []
-        print(nameList)
         for line in myDataList:
             entry = line.split(',')
             nameList.append(entry[0])
@@ -123,34 +41,10 @@ def markAttendance_for_entry(name):
             date_today=date.today();
             dtString = now.strftime('%H:%M:%S')
             convert_to_format=date_today.strftime("%d-%m-%Y")
-            #f.writelines(f'{name},{dtString},{convert_to_format}')
-            '''writer = pd.ExcelWriter('Attendance.xlsx', engine='openpyxl') 
-            wb  = writer.book
-            df = pd.DataFrame({'Username': [name],
-            'Date': [convert_to_format],
-            'Time': [dtString]})
-            df.to_excel(writer, index=False)
-            wb.save('Attendance.xlsx')'''
             wb=openpyxl.load_workbook('Attendance.xlsx')
             sh1=wb['Sheet1']
             row=sh1.max_row
             column=sh1.max_column
-               
-            '''is_added_leave=False
-            for i in range(1,row+1):
-                if (sh1.cell(row=i,column=1).value==name) and (sh1.cell(row=i,column=4).value==convert_to_format) and (sh1.cell(row=i,column=3).value=='NA'):
-                    is_added_leave=True
-
-            if(is_added_leave==False):
-                #sh1.cell(row=row+1,column=3,value=dtString)
-                row_num=-1
-                for i in range(1,row+1):
-                    if (sh1.cell(row=i,column=1).value==name):
-                        row_num=i
-                if(row_num!=-1):
-                    position="C"+str(row_num)
-                    sh1[position].value=dtString'''
-
             is_added_entry=False
             for i in range(1,row+1):
                 if (sh1.cell(row=i,column=1).value==name) and (sh1.cell(row=i,column=4).value==convert_to_format):
@@ -166,9 +60,6 @@ def markAttendance_for_entry(name):
     return (False,"")
 
 def markAttendance_for_leaving(name):
-    #will mark the attendance of the student and save it in the csv file
-    #df = pd.read_excel("Attendance.xlsx", usecols = ['Username'])
-    #print(df)
     check_if_username_has_entered=False
     wb=openpyxl.load_workbook('Attendance.xlsx')
     sh1=wb['Sheet1']
@@ -183,7 +74,6 @@ def markAttendance_for_leaving(name):
     with open('Attendance.csv', 'r+') as f:
         myDataList = f.readlines()
         nameList = []
-        print(nameList)
         for line in myDataList:
             entry = line.split(',')
             nameList.append(entry[0])
@@ -192,19 +82,9 @@ def markAttendance_for_leaving(name):
             date_today=date.today();
             dtString = now.strftime('%H:%M:%S')
             convert_to_format=date_today.strftime("%d-%m-%Y")
-            #f.writelines(f'{name},{dtString},{convert_to_format}')
-            '''writer = pd.ExcelWriter('Attendance.xlsx', engine='openpyxl') 
-            wb  = writer.book
-            df = pd.DataFrame({'Username': [name],
-            'Date': [convert_to_format],
-            'Time': [dtString]})
-            df.to_excel(writer, index=False)
-            wb.save('Attendance.xlsx')'''
             wb=openpyxl.load_workbook('Attendance.xlsx')
             sh1=wb['Sheet1']
             row=sh1.max_row
-            column=sh1.max_column
-               
             is_added_leave=False
             for i in range(1,row+1):
                 if (sh1.cell(row=i,column=1).value==name) and (sh1.cell(row=i,column=4).value==convert_to_format) and (sh1.cell(row=i,column=3).value=='NA'):
@@ -244,20 +124,16 @@ def location():
         global longitude,latitude
         longitude=request.form['longitude']
         latitude=request.form['latitude']
-        print(latitude,longitude)
         return render_template('/admin_page.html',info="Location Updated")
     return render_template('/admin_page.html')
 
 @app.route('/confirm_location', methods=['GET', 'POST'])
 def confirm_location():
     g = geocoder.ip('me')
-    print(g.latlng)
     if request.method == 'POST':
         longitude_cor = request.form['longitude_cord']
         latitude_cor = request.form['latitude_cord']
-        print(latitude_cor,longitude_cor,longitude,latitude)
         if(float(latitude_cor)-5.0<=float(g.latlng[0])<=float(latitude_cor)+5.0 and float(longitude_cor)-5.0<=float(g.latlng[1])<=float(longitude_cor)+5.0):
-            print("True")
             if(((float(longitude)-5.0)<=float(longitude_cor)<=(float(longitude)+5.0)) and ((float(latitude)-5.0)<=float(latitude_cor)<=(float(latitude)+5.0))):
                 return render_template('/mark_attendance.html')
             else:
@@ -273,7 +149,6 @@ def form_signup():
         uname=request.form['username']
         passw=request.form['password']
         mail=request.form['mail']
-        print(uname,passw,mail)
         wb=openpyxl.load_workbook('database.xlsx')
         sh1=wb['Sheet1']
         row=sh1.max_row
@@ -307,9 +182,6 @@ def form_login():
             return render_template('/admin_page.html')
         elif (name1=='admin' and pwd!='ms-engage'):
             return render_template('/login_page.html',info='Invalid Password')
-        #name1='vaibhav'
-        # #pwd='12345'
-        print(name1,pwd)
         wb=openpyxl.load_workbook('database.xlsx')
         sh1=wb['Sheet1']
         row=sh1.max_row
@@ -322,15 +194,7 @@ def form_login():
         if(check_if_username_exists==False):
             wb.save('database.xlsx')
             return render_template('/login_page.html',info='Invalid Username')
-        '''else:
-            if database[name1][0]!=pwd:
-                # after login gets successful it redirects to the page where attendence woulde be taken
-                # # make the attendence webpage and change the below location to it
-                return render_template('/login_page.html',info='Invalid Password')
-            else:
-                return render_template('/mark_attendance.html')'''
         for i in range(1,row+1):
-            print(sh1.cell(row=i,column=1).value,sh1.cell(row=i,column=2).value)
             if (name1 == sh1.cell(row=i,column=1).value) and (pwd == str(sh1.cell(row=i,column=2).value)):
                 wb.save('database.xlsx')
                 return render_template('/check_location_of_user.html')
@@ -348,18 +212,14 @@ def upload_file():
       f = request.files['file']
       #f.save(secure_filename(f.filename))
       f.save(os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(f.filename)))
-      #print(database)
       myList = os.listdir(path)
-      print(myList)
       for cl in myList:
           curImg = cv2.imread(f'{path}/{cl}')
           images.append(curImg)
           classNames.append(os.path.splitext(cl)[0])
-      print(classNames)
       #keep a close check here.
       global encodeListKnown
       encodeListKnown = findEncodings(images)
-      print('Encoding Complete')
       return render_template('/login_page.html',info='Photo Uploaded')
 
 @app.route("/")
@@ -375,34 +235,6 @@ def about():
 @app.route("/leaving_out", methods=['GET', 'POST'])
 def leaving_out():
     human_is_real=True
-    '''cap = cv2.VideoCapture(0)
-    detector = dlib.get_frontal_face_detector()
-    predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
-    left_eye_landmarks  = [36, 37, 38, 39, 40, 41]
-    right_eye_landmarks = [42, 43, 44, 45, 46, 47]
-    while True:
-        retval, frame = cap.read()
-
-        if not retval:
-            print("Can't receive frame (stream end?). Exiting ...") 
-            human_is_real=False
-
-        faces,_,_ = detector.run(image = frame, upsample_num_times = 0, adjust_threshold = 0.0)
-
-        for face in faces:
-            landmarks = predictor(frame, face)
-            left_eye_ratio  = get_blink_ratio(left_eye_landmarks, landmarks)
-            right_eye_ratio = get_blink_ratio(right_eye_landmarks, landmarks)
-            blink_ratio     = (left_eye_ratio + right_eye_ratio) / 2
-
-            if blink_ratio > BLINK_RATIO_THRESHOLD:
-                cv2.putText(frame,"BLINKING",(10,50), cv2.FONT_HERSHEY_SIMPLEX,
-                2,(255,255,255),2,cv2.LINE_AA)
-                human_is_real=True
-        cv2.imshow('Webcam', frame)
-        key = cv2.waitKey(1)
-        if key == 27 or human_is_real==True:
-            break'''
     if human_is_real==True:
         cap = cv2.VideoCapture(0)
         while True:
@@ -419,12 +251,10 @@ def leaving_out():
             for encodeFace, faceLoc in zip(encodesCurFrame, facesCurFrame):
                 matches = face_recognition.compare_faces(encodeListKnown, encodeFace)
                 faceDis = face_recognition.face_distance(encodeListKnown, encodeFace)
-                # print(faceDis)
                 matchIndex = np.argmin(faceDis)
             
                 if matches[matchIndex]:
                     name = classNames[matchIndex].upper()
-                    print(name)
                     y1, x2, y2, x1 = faceLoc
                     y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
                     cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
@@ -439,8 +269,6 @@ def leaving_out():
                 break
         cap.release()
         cv2.destroyAllWindows()
-        #return render_template("index.html")
-        print(to_close_the_web_cam[1])
         return render_template("/mark_attendance.html",info=to_close_the_web_cam[1])
 
 
@@ -449,34 +277,6 @@ def login():
     #open the camera and takes the attendence
     #if error occur because of it then put it as same as in FaceDetect.py code
     human_is_real=True
-    '''cap = cv2.VideoCapture(0)
-    detector = dlib.get_frontal_face_detector()
-    predictor = dlib.shape_predictor("shape_predictor_68_face_landmarks.dat")
-    left_eye_landmarks  = [36, 37, 38, 39, 40, 41]
-    right_eye_landmarks = [42, 43, 44, 45, 46, 47]
-    while True:
-        retval, frame = cap.read()
-
-        if not retval:
-            print("Can't receive frame (stream end?). Exiting ...") 
-            human_is_real=False
-
-        faces,_,_ = detector.run(image = frame, upsample_num_times = 0, adjust_threshold = 0.0)
-
-        for face in faces:
-            landmarks = predictor(frame, face)
-            left_eye_ratio  = get_blink_ratio(left_eye_landmarks, landmarks)
-            right_eye_ratio = get_blink_ratio(right_eye_landmarks, landmarks)
-            blink_ratio     = (left_eye_ratio + right_eye_ratio) / 2
-
-            if blink_ratio > BLINK_RATIO_THRESHOLD:
-                cv2.putText(frame,"BLINKING",(10,50), cv2.FONT_HERSHEY_SIMPLEX,
-                2,(255,255,255),2,cv2.LINE_AA)
-                human_is_real=True
-        cv2.imshow('Webcam', frame)
-        key = cv2.waitKey(1)
-        if key == 27 or human_is_real==True:
-            break'''
     if human_is_real==True:
         cap = cv2.VideoCapture(0)
         while True:
@@ -493,12 +293,10 @@ def login():
             for encodeFace, faceLoc in zip(encodesCurFrame, facesCurFrame):
                 matches = face_recognition.compare_faces(encodeListKnown, encodeFace)
                 faceDis = face_recognition.face_distance(encodeListKnown, encodeFace)
-                # print(faceDis)
                 matchIndex = np.argmin(faceDis)
             
                 if matches[matchIndex]:
                     name = classNames[matchIndex].upper()
-                    print(name)
                     y1, x2, y2, x1 = faceLoc
                     y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
                     cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
@@ -513,8 +311,6 @@ def login():
                 break
         cap.release()
         cv2.destroyAllWindows()
-        #return render_template("index.html")
-        print(to_close_the_web_cam[1])
         return render_template("/mark_attendance.html",info=to_close_the_web_cam[1])
 
 
@@ -522,15 +318,11 @@ path = "static/uploads"
 images = []
 classNames = []
 myList = os.listdir(path)
-print(myList)
 for cl in myList:
     curImg = cv2.imread(f'{path}/{cl}')
     images.append(curImg)
     classNames.append(os.path.splitext(cl)[0])
-print(classNames)
 encodeListKnown = findEncodings(images)
-print('Encoding Complete')
 
 if __name__=="__main__":
-    #database.clear()
-    app.run(debug=True)
+    app.run(debug=False)
